@@ -161,12 +161,12 @@ var Hue = (function () {
         var r = rgb[0],
             g = rgb[1],
             b = rgb[2];
+        
+        rgb[0] = r * mRGBtoXYZ[0] + g * mRGBtoXYZ[3] + b * mRGBtoXYZ[6];
+        rgb[1] = r * mRGBtoXYZ[1] + g * mRGBtoXYZ[4] + b * mRGBtoXYZ[7];
+        rgb[2] = r * mRGBtoXYZ[2] + g * mRGBtoXYZ[5] + b * mRGBtoXYZ[8];
 
-        return [
-                r * mRGBtoXYZ[0] + g * mRGBtoXYZ[3] + b * mRGBtoXYZ[6],
-                r * mRGBtoXYZ[1] + g * mRGBtoXYZ[4] + b * mRGBtoXYZ[7],
-                r * mRGBtoXYZ[2] + g * mRGBtoXYZ[5] + b * mRGBtoXYZ[8]
-            ];
+        return rgb;
     }
 
     function XYZtoRGB(xyz) {
@@ -174,15 +174,14 @@ var Hue = (function () {
             y = xyz[1],
             z = xyz[2],
             p = 1/2.4,
-            rgb = [0, 0, 0],
             s = 1, a,
             exp = Math.exp, log = Math.log;
-        rgb[0] = x * mXYZtoRGB[0] + y * mXYZtoRGB[3] + z * mXYZtoRGB[6];
-        rgb[1] = x * mXYZtoRGB[1] + y * mXYZtoRGB[4] + z * mXYZtoRGB[7];
-        rgb[2] = x * mXYZtoRGB[2] + y * mXYZtoRGB[5] + z * mXYZtoRGB[8];
+        xyz[0] = x * mXYZtoRGB[0] + y * mXYZtoRGB[3] + z * mXYZtoRGB[6];
+        xyz[1] = x * mXYZtoRGB[1] + y * mXYZtoRGB[4] + z * mXYZtoRGB[7];
+        xyz[2] = x * mXYZtoRGB[2] + y * mXYZtoRGB[5] + z * mXYZtoRGB[8];
 
         for (var i = 0; i < 3; i++) {
-            a = rgb[i];
+            a = xyz[i];
             if (a < 0) {
                 s = -1;
                 a = -a;
@@ -192,10 +191,10 @@ var Hue = (function () {
             } else {
                 a = 1.055 * exp(p * log(a)) - 0.055;
             }
-            rgb[i] = (s * a * 255 + 0.5) | 0;
+            xyz[i] = (s * a * 255 + 0.5) | 0;
         }
 
-        return rgb;
+        return xyz;
     }
 
     function XYZtoLUV(xyz) {
@@ -208,11 +207,11 @@ var Hue = (function () {
             l = (y > kE) ? (116 * exp(1/3 * log(y)) - 16) :
                     (y * kK);
 
-        return [
-            l,
-            13 * l * (u - Un),
-            13 * l * (v - Vn)
-        ];
+        xyz[0] = l;
+        xyz[1] = 13 * l * (u - Un);
+        xyz[2] = 13 * l * (v - Vn);
+
+        return xyz;
     }
 
     function LUVtoXYZ(luv) {
@@ -226,37 +225,32 @@ var Hue = (function () {
             c = y * (((39 * l) / (v + 13 * l * Vn)) - 5),
             x = (c - b) / (a + 1/3);
 
-        return [
-            x,
-            y,
-            x * a + b
-        ];
+        luv[0] = x;
+        luv[1] = y;
+        luv[2] = x * a + b;
+
+        return luv;
     }
 
     function LUVtoLCH(luv) {
-        var l = luv[0],
-            u = luv[1],
+        var u = luv[1],
             v = luv[2],
-            c = Math.sqrt(u * u + v * v),
             h = Math.atan2(v, u) * 180/ Math.PI;
 
-        return [
-            l,
-            c,
-            (h < 0) ? h + 360 : h
-        ];
+        luv[1] = Math.sqrt(u * u + v * v);
+        luv[2] = (h < 0) ? h + 360 : h;
+        
+        return luv;
     }
 
     function LCHtoLUV(lch) {
-        var l = lch[0],
-            c = lch[1],
+        var c = lch[1],
             h = lch[2] * Math.PI / 180;
 
-        return [
-            l,
-            c * Math.cos(h),
-            c * Math.sin(h)
-        ];
+        lch[1] = c * Math.cos(h);
+        lch[2] = c * Math.sin(h);
+
+        return lch;
     }
 
 
