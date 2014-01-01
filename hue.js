@@ -111,7 +111,6 @@ var Hue = (function () {
     // All following calculations assume these references
     var _RefWhite = "D65",
         _RefRGB   = "sRGB",
-
         // XYZ values for D65 white point
         refWhiteY = 1,
         refWhiteX = 0.95047,
@@ -120,34 +119,21 @@ var Hue = (function () {
         Vn = 0.4683363029324097,
         kE = 216 / 24389,
         kK = 24389 / 27,
-        // sRGB properties
-        gamma = -2.2,
-
-        xr = 0.64,
-        yr = 0.33,
-        xg = 0.30,
-        yg = 0.60,
-        xb = 0.15,
-        yb = 0.06,
         sr, sg, sb,
-        
-        GammaRGBIndex = 3,
-        mRGBtoXYZ = mat3.identity(),
+                mRGBtoXYZ = mat3.identity(),
         mXYZtoRGB = mat3.identity();
 
-
-
     // Calculate sRGB to XYZ and inverse conversion matrices
-    var m = mat3.mat3(  0.64/0.33,          0.3/0.6,          0.15/0.06, 
-                        1,                  1,                1, 
-                        (1-0.64-0.33)/0.33, (1-0.3-0.6)/0.6, (1-0.15-0.06)/0.06),
+    var m = mat3.mat3(  1.9393939393939394, 0.5,        2.5, 
+                        1,                  1,          1, 
+                        0.09090909090909081, 0.16666666666666663, 13.166666666666668),
         mi = mat3.identity();
 
     mat3.invert(m, mi);
 
-    sr = refWhiteX * mi[0] + refWhiteY * mi[1] + refWhiteZ * mi[2];
-    sg = refWhiteX * mi[3] + refWhiteY * mi[4] + refWhiteZ * mi[5];
-    sb = refWhiteX * mi[6] + refWhiteY * mi[7] + refWhiteZ * mi[8];
+    sr = refWhiteX * mi[0] + /* refWhiteY * */ mi[1] + refWhiteZ * mi[2];
+    sg = refWhiteX * mi[3] + /* refWhiteY * */ mi[4] + refWhiteZ * mi[5];
+    sb = refWhiteX * mi[6] + /* refWhiteY * */ mi[7] + refWhiteZ * mi[8];
 
     mRGBtoXYZ = mat3.mat3(  sr * m[0], sg * m[1], sb * m[2], 
                             sr * m[3], sg * m[4], sb * m[5], 
@@ -156,25 +142,25 @@ var Hue = (function () {
     mat3.transpose(mRGBtoXYZ);
     mat3.invert(mRGBtoXYZ, mXYZtoRGB);
 
-    function linearise(a, scale) {
-        // sRGB and D65 white point has a gamma of -2.2
-        var s = a < 0 ? -1 : 1;
-        a = Math.abs(a) / scale;
-        return s * (a <= 0.04045 ? a / 12.92 : Math.pow((a + 0.055) / 1.055, 2.4));
-    }
-
-    function sRGBise(a, scale) {
-        // sRGB and D65 white point has a gamma of -2.2
-        var s = a < 0 ? -1 : 1;
-        a = Math.abs(a);
-        a = a <= 0.0031308 ? a * 12.92 : 1.055 * Math.pow(a, 1/2.4) - 0.055;
-        return Math.round(s * a * scale);
-    }
-
     function RGBtoXYZ(rgb) {
-        var r = linearise(rgb[0], 255),
-            g = linearise(rgb[1], 255),
-            b = linearise(rgb[2], 255);
+        var s = 1, a,
+            exp = Math.exp, log = Math.log;
+        for (var i = 0; i < 3; i++) {
+            a = rgb[i] / 255;
+            if (a < 0) {
+                s = -1;
+                a = -a;
+            }
+            if (a <= 0.04045) {
+                a = a / 12.92;
+            } else {
+                a = exp(2.4 * log((a + 0.055) / 1.055));
+            }
+            rgb[i] = s * a;
+        }
+        var r = rgb[0],
+            g = rgb[1],
+            b = rgb[2];
 
         return [
                 r * mRGBtoXYZ[0] + g * mRGBtoXYZ[3] + b * mRGBtoXYZ[6],
@@ -186,13 +172,30 @@ var Hue = (function () {
     function XYZtoRGB(xyz) {
         var x = xyz[0],
             y = xyz[1],
-            z = xyz[2];
-            
-        return [
-            sRGBise(x * mXYZtoRGB[0] + y * mXYZtoRGB[3] + z * mXYZtoRGB[6], 255),
-            sRGBise(x * mXYZtoRGB[1] + y * mXYZtoRGB[4] + z * mXYZtoRGB[7], 255),
-            sRGBise(x * mXYZtoRGB[2] + y * mXYZtoRGB[5] + z * mXYZtoRGB[8], 255)
-        ];
+            z = xyz[2],
+            p = 1/2.4,
+            rgb = [0, 0, 0],
+            s = 1, a,
+            exp = Math.exp, log = Math.log;
+        rgb[0] = x * mXYZtoRGB[0] + y * mXYZtoRGB[3] + z * mXYZtoRGB[6];
+        rgb[1] = x * mXYZtoRGB[1] + y * mXYZtoRGB[4] + z * mXYZtoRGB[7];
+        rgb[2] = x * mXYZtoRGB[2] + y * mXYZtoRGB[5] + z * mXYZtoRGB[8];
+
+        for (var i = 0; i < 3; i++) {
+            a = rgb[i];
+            if (a < 0) {
+                s = -1;
+                a = -a;
+            }
+            if (a <= 0.0031308) {
+                a = a * 12.92;
+            } else {
+                a = 1.055 * exp(p * log(a)) - 0.055;
+            }
+            rgb[i] = (s * a * 255 + 0.5) | 0;
+        }
+
+        return rgb;
     }
 
     function XYZtoLUV(xyz) {
@@ -202,7 +205,7 @@ var Hue = (function () {
             den = x + 15 * y + 3 * z,
             u = den > 0 ? 4 * x / den : 0,
             v = den > 0 ? 9 * y / den : 0,
-            l = (y > kE) ? (116 * Math.pow(y, 1/3) - 16) :
+            l = (y > kE) ? (116 * exp(1/3 * log(y)) - 16) :
                     (y * kK);
 
         return [
@@ -216,7 +219,8 @@ var Hue = (function () {
         var l = luv[0],
             u = luv[1],
             v = luv[2],
-            y = l > 8 ? Math.pow((l + 16) / 116, 3) : (l / kK),
+            l3 = (l + 16) / 116,
+            y = l > 8 ? (l3 * l3 * l3) : (l / kK),
             a = (((52 * l) / (u + 13 * l * Un)) - 1) / 3,
             b = -5 * y,
             c = y * (((39 * l) / (v + 13 * l * Vn)) - 5),
