@@ -5,18 +5,37 @@
         <script src="hue.js"></script>
         <script src="test.js"></script>
         <style>
-            #cvs {
+            .row{
+                width: 100%;
                 display: block;
+            }
+            #cvs, #cvs2 {
                 background-image: url("docs/assets/reset.png");
+                margin-right: 20px;
             }
             #hval {
-                margin-top: 20px;
-                width: 300px;
+                margin: 20px 0 0 125px;
+                width: 360px;
+            }
+            #vval {
+                position: absolute;
+                top: 0px;
+                width: 200px;
+                transform: translatey(200px) rotate(-90deg); 
+                -moz-transform: translatey(200px) rotate(-90deg); 
+                -webkit-transform: translatey(200px) rotate(-90deg); 
+                transform-origin: center left;
+                -moz-transform-origin: center left;
+                -webkit-transform-origin: center left;
             }
         </style>
     </head>
     <body>
-        <canvas id="cvs" width="100px" height="200px"></canvas>
+        <div class="row">
+            <canvas id="cvs" width="100px" height="200px"></canvas>
+            <canvas id="cvs2" width="360px" height="200px"></canvas>
+            <input id="vval" type="range" min=0 max=100 value=54 name="vval">
+        </div>
         <input id="hval" type="range" min=0 max=360 value=0 name="hval">
     </body>
 </html>

@@ -11,8 +11,6 @@ function plotSliceH(H, width, height, arr) {
     for (c = 0 ; c < width; c++) {
       C = c * 200 / width;
       rgb = Hue.LCHtoRGB([L, C, H]);
-      // rgb = LCHtoRGB(L, C, H);
-      // rgb = chroma(L, C, H, 'lch').rgb();
       idx = scan + c * 4;
       if (Math.min(rgb[0], rgb[1], rgb[2]) >= 0 &&
             Math.max(rgb[0], rgb[1], rgb[2]) <= 255) {
