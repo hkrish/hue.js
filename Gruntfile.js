@@ -10,7 +10,7 @@ module.exports = function(grunt) {
             },
             build: {
                 src: 'src/hue.js',
-                dest: 'build/js/hue.min.js'
+                dest: 'build/hue.min.js'
             }
         },
 
