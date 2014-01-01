@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>LCH</title>
+        <script src="hue.js"></script>
+        <script src="test.js"></script>
+        <style>
+            #cvs {
+                display: block;
+                background-image: url("docs/assets/reset.png");
+            }
+            #hval {
+                margin-top: 20px;
+                width: 300px;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="cvs" width="300px" height="400px"></canvas>
+        <input id="hval" type="range" min=0 max=360 value=0 name="hval">
+    </body>
+</html>
