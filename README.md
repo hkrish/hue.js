@@ -3,6 +3,11 @@
 
 ##Installation and Usage
 
+```
+cd hue.js
+npm install
+```
+
 ##Theoretical Details
 
 ##References and Acknowledgements
