@@ -9,141 +9,35 @@
 var Hue = (function () {
     'use strict';
 
-    /*
-     * Utility function such as colour type conversions, matrix math etc.
-     */
     /*!
-        Some matrix methods are modified from gl-matrix library
-        Source: https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/mat3.js
-
-    Copyright (c) 2013, Brandon Jones, Colin MacKenzie IV. All rights reserved.
-
-    Redistribution and use in source and binary forms, with or without modification,
-    are permitted provided that the following conditions are met:
-
-      * Redistributions of source code must retain the above copyright notice, this
-        list of conditions and the following disclaimer.
-      * Redistributions in binary form must reproduce the above copyright notice,
-        this list of conditions and the following disclaimer in the documentation 
-        and/or other materials provided with the distribution.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-    ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-    ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
-    var mat3 = {};
-    /**
-     * Creates a new identity mat3
-     */
-    mat3.identity = function() {
-        var out =  [1, 0, 0, 
-                    0, 1, 0,
-                    0, 0, 1];
-        return out;
-    };
-    /**
-     * Creates a new 3x3 matrix from the values
-     */
-    mat3.mat3 = function(a00, a01, a02, a10, a11, a12, a20, a21, a22) {
-        var out =  [a00, a01, a02, 
-                    a10, a11, a12, 
-                    a20, a21, a22];
-        return out;
-    };
-    /**
-     * Transpose the values of a mat3
-     */
-    mat3.transpose = function(out) {
-        var a01 = out[1], a02 = out[2], a12 = out[5];
-        out[1] = out[3];
-        out[2] = out[6];
-        out[3] = a01;
-        out[5] = out[7];
-        out[6] = a02;
-        out[7] = a12;
-        return out;
-    };
-    /**
-     * Inverts a mat3
-     */
-    mat3.invert = function(src, out) {
-        var a00 = src[0], a01 = src[1], a02 = src[2],
-            a10 = src[3], a11 = src[4], a12 = src[5],
-            a20 = src[6], a21 = src[7], a22 = src[8],
-
-            b01 = a22 * a11 - a12 * a21,
-            b11 = -a22 * a10 + a12 * a20,
-            b21 = a21 * a10 - a11 * a20,
-
-            // Calculate the determinant
-            det = a00 * b01 + a01 * b11 + a02 * b21;
-
-        if (!det) { 
-            return null; 
-        }
-        det = 1.0 / det;
-
-        out[0] = b01 * det;
-        out[1] = (-a22 * a01 + a02 * a21) * det;
-        out[2] = (a12 * a01 - a02 * a11) * det;
-        out[3] = b11 * det;
-        out[4] = (a22 * a00 - a02 * a20) * det;
-        out[5] = (-a12 * a00 + a02 * a10) * det;
-        out[6] = b21 * det;
-        out[7] = (-a21 * a00 + a01 * a20) * det;
-        out[8] = (a11 * a00 - a01 * a10) * det;
-        return out;
-    };
-
-
-    /*!
-     * Most of the references for color format conversions,
+     * Many of the references for color format conversions,
      * formulas, constants and general information regarding color type
-     * conversions are from
-     * http://www.brucelindbloom.com/index.html?ChromAdaptEval.html
+     * conversions are from http://www.brucelindbloom.com/Math.html
      */
     // All following calculations assume these references
     var _RefWhite = "D65",
         _RefRGB   = "sRGB",
-        // XYZ values for D65 white point
-        refWhiteY = 1,
-        refWhiteX = 0.95047,
-        refWhiteZ = 1.08883,
+        // Constants
         Un = 0.19783982482140777,
         Vn = 0.4683363029324097,
         kE = 216 / 24389,
         kK = 24389 / 27,
-        sr, sg, sb,
-                mRGBtoXYZ = mat3.identity(),
-        mXYZtoRGB = mat3.identity();
+        PIover180 = Math.PI / 180,
+        // RGB <-> XYZ conversion matrices
+        // See http://www.brucelindbloom.com/Eqn_RGB_XYZ_Matrix.html for
+        // original formulae
+        mRGBtoXYZ = [   0.4124564390896922, 0.21267285140562253, 0.0193338955823293,
+                        0.357576077643909, 0.715152155287818, 0.11919202588130297,
+                        0.18043748326639894, 0.07217499330655958, 0.9503040785363679 ],
+        mXYZtoRGB = [   3.2404541621141045, -0.9692660305051868, 0.055643430959114726,
+                        -1.5371385127977166, 1.8760108454466942, -0.2040259135167538,
+                        -0.498531409556016, 0.041556017530349834, 1.0572251882231791 ];
 
-    // Calculate sRGB to XYZ and inverse conversion matrices
-    var m = mat3.mat3(  1.9393939393939394, 0.5,        2.5, 
-                        1,                  1,          1, 
-                        0.09090909090909081, 0.16666666666666663, 13.166666666666668),
-        mi = mat3.identity();
-
-    mat3.invert(m, mi);
-
-    sr = refWhiteX * mi[0] + /* refWhiteY * */ mi[1] + refWhiteZ * mi[2];
-    sg = refWhiteX * mi[3] + /* refWhiteY * */ mi[4] + refWhiteZ * mi[5];
-    sb = refWhiteX * mi[6] + /* refWhiteY * */ mi[7] + refWhiteZ * mi[8];
-
-    mRGBtoXYZ = mat3.mat3(  sr * m[0], sg * m[1], sb * m[2], 
-                            sr * m[3], sg * m[4], sb * m[5], 
-                            sr * m[6], sg * m[7], sb * m[8]);
-
-    mat3.transpose(mRGBtoXYZ);
-    mat3.invert(mRGBtoXYZ, mXYZtoRGB);
-
+    /**
+     * Low level utility functions for direct conversions
+     */
     function _RGBtoXYZ(rgb) {
-        var s = 1, a,
+        var s = 1, a = 0.0,
             exp = Math.exp, log = Math.log;
         for (var i = 0; i < 3; i++) {
             a = rgb[i] / 255;
@@ -170,11 +64,11 @@ var Hue = (function () {
     }
 
     function _XYZtoRGB(xyz) {
-        var x = xyz[0],
-            y = xyz[1],
-            z = xyz[2],
+        var x = +xyz[0],
+            y = +xyz[1],
+            z = +xyz[2],
             p = 1/2.4,
-            s = 1, a,
+            s = 1, a = 0.0,
             exp = Math.exp, log = Math.log;
         xyz[0] = x * mXYZtoRGB[0] + y * mXYZtoRGB[3] + z * mXYZtoRGB[6];
         xyz[1] = x * mXYZtoRGB[1] + y * mXYZtoRGB[4] + z * mXYZtoRGB[7];
@@ -198,18 +92,18 @@ var Hue = (function () {
     }
 
     function _XYZtoLUV(xyz) {
-        var x = xyz[0],
-            y = xyz[1],
-            z = xyz[2],
-            den = x + 15 * y + 3 * z,
-            u = den > 0 ? 4 * x / den : 0,
-            v = den > 0 ? 9 * y / den : 0,
-            l = (y > kE) ? (116 * exp(1/3 * log(y)) - 16) :
+        var x = +xyz[0],
+            y = +xyz[1],
+            z = +xyz[2],
+            den = x + 15.0 * y + 3 * z,
+            u = den > 0 ? 4.0 * x / den : 0.0,
+            v = den > 0 ? 9.0 * y / den : 0.0,
+            l = (y > kE) ? (116.0 * exp(1/3 * log(y)) - 16) :
                     (y * kK);
 
-        xyz[0] = l;
-        xyz[1] = 13 * l * (u - Un);
-        xyz[2] = 13 * l * (v - Vn);
+        xyz[0] = +l;
+        xyz[1] = 13.0 * l * (u - Un);
+        xyz[2] = 13.0 * l * (v - Vn);
 
         return xyz;
     }
@@ -235,7 +129,7 @@ var Hue = (function () {
     function _LUVtoLCH(luv) {
         var u = luv[1],
             v = luv[2],
-            h = Math.atan2(v, u) * 180/ Math.PI;
+            h = Math.atan2(v, u) / PIover180;
 
         luv[1] = Math.sqrt(u * u + v * v);
         luv[2] = (h < 0) ? h + 360 : h;
@@ -245,7 +139,7 @@ var Hue = (function () {
 
     function _LCHtoLUV(lch) {
         var c = lch[1],
-            h = lch[2] * Math.PI / 180;
+            h = lch[2] * PIover180;
 
         lch[1] = c * Math.cos(h);
         lch[2] = c * Math.sin(h);
@@ -268,9 +162,6 @@ var Hue = (function () {
     });
 
 
-    /**
-     * Low level utility functions for direct conversions
-     */
     // RGB <-> XYZ
     Hue.RGBtoXYZ = _RGBtoXYZ;
     Hue.XYZtoRGB = _XYZtoRGB;
