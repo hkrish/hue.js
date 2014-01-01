@@ -142,7 +142,7 @@ var Hue = (function () {
     mat3.transpose(mRGBtoXYZ);
     mat3.invert(mRGBtoXYZ, mXYZtoRGB);
 
-    function RGBtoXYZ(rgb) {
+    function _RGBtoXYZ(rgb) {
         var s = 1, a,
             exp = Math.exp, log = Math.log;
         for (var i = 0; i < 3; i++) {
@@ -169,7 +169,7 @@ var Hue = (function () {
         return rgb;
     }
 
-    function XYZtoRGB(xyz) {
+    function _XYZtoRGB(xyz) {
         var x = xyz[0],
             y = xyz[1],
             z = xyz[2],
@@ -197,7 +197,7 @@ var Hue = (function () {
         return xyz;
     }
 
-    function XYZtoLUV(xyz) {
+    function _XYZtoLUV(xyz) {
         var x = xyz[0],
             y = xyz[1],
             z = xyz[2],
@@ -214,7 +214,7 @@ var Hue = (function () {
         return xyz;
     }
 
-    function LUVtoXYZ(luv) {
+    function _LUVtoXYZ(luv) {
         var l = luv[0],
             u = luv[1],
             v = luv[2],
@@ -232,7 +232,7 @@ var Hue = (function () {
         return luv;
     }
 
-    function LUVtoLCH(luv) {
+    function _LUVtoLCH(luv) {
         var u = luv[1],
             v = luv[2],
             h = Math.atan2(v, u) * 180/ Math.PI;
@@ -243,7 +243,7 @@ var Hue = (function () {
         return luv;
     }
 
-    function LCHtoLUV(lch) {
+    function _LCHtoLUV(lch) {
         var c = lch[1],
             h = lch[2] * Math.PI / 180;
 
@@ -272,20 +272,20 @@ var Hue = (function () {
      * Low level utility functions for direct conversions
      */
     // RGB <-> XYZ
-    Hue.RGBtoXYZ = RGBtoXYZ;
-    Hue.XYZtoRGB = XYZtoRGB;
+    Hue.RGBtoXYZ = _RGBtoXYZ;
+    Hue.XYZtoRGB = _XYZtoRGB;
     // XYZ <-> LUV
-    Hue.XYZtoLUV = XYZtoLUV;
-    Hue.LUVtoXYZ = LUVtoXYZ;
+    Hue.XYZtoLUV = _XYZtoLUV;
+    Hue.LUVtoXYZ = _LUVtoXYZ;
     // LUV <-> LCH
-    Hue.LUVtoLCH = LUVtoLCH;
-    Hue.LCHtoLUV = LCHtoLUV;
+    Hue.LUVtoLCH = _LUVtoLCH;
+    Hue.LCHtoLUV = _LCHtoLUV;
     // RGB <-> LCH
     Hue.RGBtoLCH = function(rgb){
-        return LUVtoLCH(XYZtoLUV(RGBtoXYZ(rgb)));
+        return _LUVtoLCH(_XYZtoLUV(_RGBtoXYZ(rgb)));
     };
     Hue.LCHtoRGB = function(lch){
-        return XYZtoRGB(LUVtoXYZ(LCHtoLUV(lch)));
+        return _XYZtoRGB(_LUVtoXYZ(_LCHtoLUV(lch)));
     };
 
     return Hue;
