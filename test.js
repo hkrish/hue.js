@@ -6,7 +6,7 @@ window.onload = function() {
     iData = cxt.getImageData(0, 0, cvs.width, cvs.height);
 
   var hRange = document.getElementById("hval");
-  hRange.addEventListener("change", function(e){
+  hRange.addEventListener("input", function(e){
     refreshPlot(cxt, iData, e.target.value | 0);
   });
 
