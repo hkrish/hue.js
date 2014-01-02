@@ -3,6 +3,7 @@
     <head>
         <title>LCH</title>
         <script src="../../build/hue.min.js"></script>
+        <script src="three.min.js"></script>
         <script src="test.js"></script>
         <script src="http://localhost:35729/livereload.js"></script>
         <style>
@@ -10,12 +11,15 @@
                 width: 100%;
                 display: block;
             }
-            #cvs, #cvs2 {
+            #cvs, #cvs2, #cvs3 {
                 background-image: url("reset.png");
                 margin-right: 20px;
             }
+            #cvs3 {
+                margin-left: 125px;
+            }
             #hval {
-                margin: 20px 0 0 125px;
+                margin: 20px 0 20px 125px;
                 width: 360px;
             }
             #vval {
@@ -38,5 +42,8 @@
             <input id="vval" type="range" min=0 max=100 value=54 name="vval">
         </div>
         <input id="hval" type="range" min=0 max=360 value=0 name="hval">
+        <div class="row">
+            <canvas id="cvs3" width="360px" height="360px"></canvas>
+        </div>
     </body>
 </html>
