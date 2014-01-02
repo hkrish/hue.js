@@ -33,7 +33,7 @@ module.exports = function(grunt) {
                 livereload: true,
             },
             src: {
-                files: ['src/*.js'],
+                files: ['src/*.js', 'test/**/*.js'],
                 tasks: ['default'],
             }
         },
