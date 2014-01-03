@@ -2,7 +2,8 @@
 <html lang="en">
     <head>
         <title>LCH</title>
-        <script src="../../build/hue.min.js"></script>
+        <script src="../../src/hue.js"></script>
+        <!-- <script src="../../build/hue.min.js"></script> -->
         <script src="three.min.js"></script>
         <script src="test.js"></script>
         <script src="http://localhost:35729/livereload.js"></script>
@@ -16,19 +17,19 @@
                 margin-right: 20px;
             }
             #cvs3 {
-                margin-left: 125px;
+                margin-left: 100px;
             }
             #hval {
-                margin: 20px 0 20px 125px;
-                width: 360px;
+                margin: 10px 0 10px 105px;
+                width: 180px;
             }
             #vval {
                 position: absolute;
                 top: 0px;
-                width: 200px;
-                transform: translatey(200px) rotate(-90deg); 
-                -moz-transform: translatey(200px) rotate(-90deg); 
-                -webkit-transform: translatey(200px) rotate(-90deg); 
+                width: 180px;
+                transform: translatey(180px) rotate(-90deg); 
+                -moz-transform: translatey(180px) rotate(-90deg); 
+                -webkit-transform: translatey(180px) rotate(-90deg); 
                 transform-origin: center left;
                 -moz-transform-origin: center left;
                 -webkit-transform-origin: center left;
@@ -37,8 +38,8 @@
     </head>
     <body>
         <div class="row">
-            <canvas id="cvs" width="100px" height="200px"></canvas>
-            <canvas id="cvs2" width="360px" height="200px"></canvas>
+            <canvas id="cvs" width="80px" height="180px"></canvas>
+            <canvas id="cvs2" width="180px" height="180px"></canvas>
             <input id="vval" type="range" min=0 max=100 value=54 name="vval">
         </div>
         <input id="hval" type="range" min=0 max=360 value=0 name="hval">
