@@ -187,7 +187,7 @@ var Hue = (function () {
         // I have changed the formula slightly to use the more complicated but
         // accurate sRGB gamma correction, which is used consistently throughout
         // the library.
-        var msc = [0, 0, 0], variant, min, max, i, edge,
+        var msc = [0, 0, 0], variant, vi, min, max, i, edge,
             mrX, mrY, mrZ, mtX, mtY, mtZ, s = 1, cRp,
             PIover180 = Math.PI / 180,
             a = - Math.sin(hue * PIover180),
@@ -206,9 +206,10 @@ var Hue = (function () {
         msc[min] = 0;
         msc[max] = 1;
         max *= 3;
-        mrX = mRGBtoXYZ[variant * 3];
-        mrY = mRGBtoXYZ[variant * 3 + 1];
-        mrZ = mRGBtoXYZ[variant * 3 + 2];
+        vi = variant * 3;
+        mrX = mRGBtoXYZ[vi];
+        mrY = mRGBtoXYZ[vi + 1];
+        mrZ = mRGBtoXYZ[vi + 2];
         mtX = mRGBtoXYZ[max];
         mtY = mRGBtoXYZ[max + 1];
         mtZ = mRGBtoXYZ[max + 2];
