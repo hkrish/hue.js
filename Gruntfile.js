@@ -37,7 +37,7 @@ module.exports = function(grunt) {
             },
             src: {
                 files: ['src/*.js', 'test/**/*.js'],
-                tasks: ['default'],
+                tasks: ['lint'],
             }
         },
     });
