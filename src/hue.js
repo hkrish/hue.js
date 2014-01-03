@@ -3,8 +3,8 @@
  * hue
  *
  * A singleton object
- * 
- * @return {[type]} [description]
+ *
+ * @namespace
  */
 var Hue = (function () {
     'use strict';
@@ -33,7 +33,24 @@ var Hue = (function () {
                         0.18043748326639894, 0.07217499330655958, 0.9503040785363679 ],
         mXYZtoRGB = [   3.2404541621141045, -0.9692660305051868, 0.055643430959114726,
                         -1.5371385127977166, 1.8760108454466942, -0.2040259135167538,
-                        -0.498531409556016, 0.041556017530349834, 1.0572251882231791 ];
+                        -0.498531409556016, 0.041556017530349834, 1.0572251882231791 ],
+        // Hue corresponding to colours at the corners of an RGB cube, and the
+        // min and max RGB components throughout that edge (0-Red, 1-Green, 2-Blue).
+        // These values correspond to sRGB and D65 white point
+        rgbPrimariesH = [   
+                12.1740,        // H in LCHuv for Red
+                85.8727,        // Yellow
+                127.7236,       // Green
+                192.1740,       // Cyan
+                265.8727,       // Blue
+                307.7236 ],     // Magenta
+        rgbEdges = [
+                [rgbPrimariesH[0], rgbPrimariesH[1], 1, 2, 0],
+                [rgbPrimariesH[1], rgbPrimariesH[2], 0, 2, 1],
+                [rgbPrimariesH[2], rgbPrimariesH[3], 2, 0, 1],
+                [rgbPrimariesH[3], rgbPrimariesH[4], 1, 0, 2],
+                [rgbPrimariesH[4], rgbPrimariesH[5], 0, 1, 2],
+                [rgbPrimariesH[5], rgbPrimariesH[0], 2, 1, 0] ];
 
     /**
      * Low level utility functions for direct conversions
@@ -112,9 +129,9 @@ var Hue = (function () {
     }
 
     function _LUVtoXYZ(luv) {
-        var l = luv[0],
-            u = luv[1],
-            v = luv[2],
+        var l = +luv[0],
+            u = +luv[1],
+            v = +luv[2],
             l3 = (l + 16) / 116,
             y = l > 8 ? (l3 * l3 * l3) : (l / kK),
             a = (((52 * l) / (u + 13 * l * Un)) - 1) / 3,
@@ -130,8 +147,8 @@ var Hue = (function () {
     }
 
     function _LUVtoLCH(luv) {
-        var u = luv[1],
-            v = luv[2],
+        var u = +luv[1],
+            v = +luv[2],
             PIover180 = Math.PI / 180,
             h = Math.atan2(v, u) / PIover180;
 
@@ -160,26 +177,6 @@ var Hue = (function () {
      * @return {Array}      Most saturated color as an [R, G, B] array
      */
     function hueMSC (hue) {
-        /*
-         * Hue corresponding to colours at the corners of an RGB cube, and the
-         * min and max RGB components throughout that edge
-         *  (0-Red, 1-Green, 2-Blue).
-         * These values correspond to sRGB and D65 white point
-         */
-        var rgbPrimariesH = [   
-                12.1740,        // H in LCHuv for Red
-                85.8727,        // Yellow
-                127.7236,       // Green
-                192.1740,       // Cyan
-                265.8727,       // Blue
-                307.7236 ];     // Magenta
-        var rgbEdges = [
-                [rgbPrimariesH[0], rgbPrimariesH[1], 1, 2, 0],
-                [rgbPrimariesH[1], rgbPrimariesH[2], 0, 2, 1],
-                [rgbPrimariesH[2], rgbPrimariesH[3], 2, 0, 1],
-                [rgbPrimariesH[3], rgbPrimariesH[4], 1, 0, 2],
-                [rgbPrimariesH[4], rgbPrimariesH[5], 0, 1, 2],
-                [rgbPrimariesH[5], rgbPrimariesH[0], 2, 1, 0] ];
         // The formulae used here is referenced from Martijn Wijffelaars's 
         // Master's theses
         //  http://alexandria.tue.nl/extra2/afstversl/wsk-i/wijffelaars2008.pdf
@@ -258,6 +255,13 @@ var Hue = (function () {
     // LUV <-> LCH
     Hue.LUVtoLCH = _LUVtoLCH;
     Hue.LCHtoLUV = _LCHtoLUV;
+    // RGB <-> LUV
+    Hue.RGBtoLUV = function(rgb){
+        return _XYZtoLUV(_RGBtoXYZ(rgb));
+    };
+    Hue.LUVtoRGB = function(luv){
+        return _XYZtoRGB(_LUVtoXYZ(luv));
+    };
     // RGB <-> LCH
     Hue.RGBtoLCH = function(rgb){
         return _LUVtoLCH(_XYZtoLUV(_RGBtoXYZ(rgb)));
