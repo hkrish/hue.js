@@ -7,6 +7,9 @@ module.exports = function(grunt) {
         uglify: {
             options: {
                 // banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+                sourceMap: 'build/hue.map.js',
+                sourceMappingURL: 'hue.map.js',
+                sourceMapRoot: '../',
             },
             build: {
                 src: 'src/hue.js',
