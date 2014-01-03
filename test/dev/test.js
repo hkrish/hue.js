@@ -18,6 +18,7 @@ window.onload = function() {
     var vRange = document.getElementById("vval");
     hRange.addEventListener("input", function(e){
         refreshPlot(cxt, iData, e.target.value | 0);
+        plotHueSlice3D(meshGroup, e.target.value | 0, 300, 300, 250, true);
     });
     vRange.addEventListener("input", function(e){
         plotHC_polar(cxt2, iData2, e.target.value | 0);
@@ -59,6 +60,18 @@ function refreshPlot(cxt, iData, H) {
         }
     }
     cxt.putImageData(iData, 0, 0);
+
+    L = sampleHueSliceEdges(H);
+    L = L[0].concat(L[1]);
+    cxt.beginPath();
+    cxt.fillStyle = "#000";
+    for (l = 0; l < L.length; l++) {
+        maxL = (100 - L[l].x) * height / 100;
+        maxC = L[l].y * width / 200;
+        cxt.moveTo(maxC, maxL);
+        cxt.arc(maxC, maxL, 2, 0, 2*Math.PI);
+    }
+    cxt.fill();
 
     // Highlight max Chroma
     var mscLCH = Hue.RGBtoLCH(Hue.hueMSC(H));
@@ -258,6 +271,7 @@ var mouseX = 0;
 var mouseXOnMouseDown = 0;
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
+var meshGroup = new THREE.Object3D();
 
 function generateLUVSpace (cvs) {
     var width = cvs.width, height = cvs.height;
@@ -288,15 +302,19 @@ function generateLUVSpace (cvs) {
 
     scene = new THREE.Scene();
 
-    geometry = geometryLCH( 250, 250, 250 );
+    geometry = geometryLCH( 300, 300, 250 );
     material = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
 
     mesh = new THREE.Mesh( geometry, material );
-    mesh.position.x = 50;
-    mesh.position.y = -650;
-    mesh.position.z = -200;
-    mesh.rotation.x = -90;
-    scene.add( mesh );
+    meshGroup.add(mesh);
+
+    plotHueSlice3D(meshGroup, 12, 300, 300, 250);
+
+    meshGroup.position.x = 50;
+    meshGroup.position.y = -650;
+    meshGroup.position.z = -200;
+    meshGroup.rotation.x = -90;
+    scene.add( meshGroup );
 
     camera.lookAt(geometry.boundingSphere.center);
 
@@ -366,10 +384,45 @@ function animate() {
 }
 
 function render() {
-    mesh.rotation.z += ( targetRotation - mesh.rotation.y ) * 0.05;
+    meshGroup.rotation.z += ( targetRotation - mesh.rotation.y ) * 0.05;
     targetRotation *= 0.95;
     renderer.autoClear = false;
     renderer.clear();
     renderer.render(bgScene, bgCam);
     renderer.render( scene, camera );
+}
+
+function plotHueSlice3D(group, H, width, height, depth, changeExisting) {
+    var L, l, x, y, z, p, hr,
+        rad = Math.min(width/2, height/2),
+        PIover180 = Math.PI / 180,
+        cos = Math.cos, sin = Math.sin, material, mesh,
+        children = group.children;
+
+    L = sampleHueSliceEdges(H);
+    L = L[0].concat(L[1]);
+
+    material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    for (l = 0; l < L.length; l++) {
+        p = L[l];
+        hr = p.z * PIover180;
+        x = (p.y * cos(hr) * rad) / 200;
+        y = (p.y * sin(hr) * rad) / 200;
+        z = p.x * depth / 100;
+
+        if (changeExisting) {
+            mesh = children[l + 1];
+        } else {
+            mesh = new THREE.Mesh( new THREE.CubeGeometry(2, 2, 2), material );
+            group.add(mesh);
+        }
+        mesh.position.x = x;
+        mesh.position.y = y;
+        mesh.position.z = z;
+    }
+
+    group.position.x = 50;
+    group.position.y = -650;
+    group.position.z = -200;
+    group.rotation.x = -90;
 }
