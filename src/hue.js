@@ -18,6 +18,9 @@ var Hue = (function () {
     var _RefWhite = "D65",
         _RefRGB   = "sRGB",
         // Constants
+		RefWhiteX = 0.95047,
+		RefWhiteY = 1.0,
+		RefWhiteZ = 1.08883,
         // Un and Vn and the u, v coordinates of the reference white
         Un = 0.19783982482140777,
         Vn = 0.4683363029324097,
@@ -296,6 +299,87 @@ var Hue = (function () {
         }
         return msc;
     }
+
+	/**
+	 * Calculates difference between two colors according to the
+	 * CIEDE2000 function.
+	 * 
+	 * Original author Bruce Lindbloom
+	 * © 2001 - 2014 Bruce Justin Lindbloom, http://www.brucelindbloom.com
+	 * 
+	 * @param {Array} lab1 Reference color in CIE L*a*b* colorspace
+	 * @param {Array} lab2 Color to which distance has to be
+	 * calculated to.
+	 * @return {Number} Distance between two colors
+	 */
+	function CIEDE2000(lab1, lab2) {
+		var l1 = lab1[0],
+			a1 = lab1[1],
+			b1 = lab1[2],
+		    l2 = lab2[0],
+			a2 = lab2[1],
+			b2 = lab2[2],
+			piOver180 = Math.PI / 180,
+			sqrt = Math.sqrt,
+			exp = Math.exp,
+			sin = Math.sin,
+			cos = Math.cos,
+			atan2 = Math.atan2,
+			abs = Math.abs,
+			kL = 1.0,
+			kC = 1.0,
+			kH = 1.0,
+			lBarPrime = (l1 + l2) / 2,
+			c1 = sqrt(a1 * a1 + b1 * b1),
+			c2 = sqrt(a2 * a2 + b2 * b2),
+			cBar = (c1 + c2) / 2,
+			cBar7 = cBar * cBar * cBar * cBar * cBar * cBar * cBar,
+			g = (1 - sqrt(cBar7 / (cBar7 + 6103515625.0))) / 2,    // 6103515625 = 25^7
+			a1Prime = a1 * (1 + g),
+			a2Prime = a2 * (1 + g),
+			c1Prime = sqrt(a1Prime * a1Prime + b1 * b1),
+			c2Prime = sqrt(a2Prime * a2Prime + b2 * b2),
+			cBarPrime = (c1Prime + c2Prime) / 2,
+			h1Prime = atan2(b1, a1Prime) / piOver180,
+			h2Prime = atan2(b2, a2Prime) / piOver180;
+		if (h2Prime < 0)
+			h2Prime += 360;
+		if (h1Prime < 0)
+			h1Prime += 360;
+		var hBarPrime = abs(h1Prime - h2Prime) > 180 ?
+				(h1Prime + h2Prime + 360) / 2 :
+				(h1Prime + h2Prime) / 2,
+			t = 1 -
+				0.17 * cos((hBarPrime - 30) * piOver180) +
+				0.24 * cos((2 * hBarPrime) * piOver180) +
+				0.32 * cos((3 * hBarPrime + 6) * piOver180) -
+				0.20 * cos((4 * hBarPrime - 63) * piOver180),
+			dhPrime;
+		if (abs(h2Prime - h1Prime) <= 180)
+			dhPrime = h2Prime - h1Prime;
+		else
+			dhPrime = (h2Prime <= h1Prime)? h2Prime - h1Prime + 360 :
+			                                h2Prime - h1Prime - 360;
+		var dLPrime = l2 - l1,
+			dCPrime = c2Prime - c1Prime,
+			dHPrime = 2 * sqrt(c1Prime * c2Prime) * 
+				sin((dhPrime / 2) * piOver180),
+			sL = 1 + ((0.015 * (lBarPrime - 50) * (lBarPrime - 50)) /
+					  sqrt(20 + (lBarPrime - 50) * (lBarPrime - 50))),
+			sC = 1 + 0.045 * cBarPrime,
+			sH = 1 + 0.015 * cBarPrime * t,
+			dTheta = 30 * exp(-((hBarPrime - 275) / 25) *
+							  ((hBarPrime - 275) / 25)),
+			cBarPrime7 = cBarPrime * cBarPrime * cBarPrime *
+				cBarPrime * cBarPrime * cBarPrime * cBarPrime,
+			rC = sqrt(cBarPrime7 / (cBarPrime + 6103515625.0)),
+			rT = -2 * rC sin(2 * dTheta * piOver180);
+
+		return sqrt((dLPrime / (kL * sL)) * (dLPrime / (kL * sL)) + 
+					(dCPrime / (kC * sC)) * (dCPrime / (kC * sC)) + 
+					(dHPrime / (kH * sH)) * (dHPrime / (kH * sH)) + 
+					(dCPrime / (kC * sC)) * (dHPrime / (kH * sH)) * rT);
+	}
 
 
     var Hue = {};
