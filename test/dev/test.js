@@ -18,7 +18,7 @@ window.onload = function() {
     var vRange = document.getElementById("vval");
     hRange.addEventListener("input", function(e){
         refreshPlot(cxt, iData, e.target.value | 0);
-        plotHueSlice3D(meshGroup, e.target.value | 0, 300, 300, 250, true);
+        plotHueSlice3D(meshGroup, e.target.value | 0, 300, 300, 250);
     });
     vRange.addEventListener("input", function(e){
         plotHC_polar(cxt2, iData2, e.target.value | 0);
@@ -29,6 +29,7 @@ window.onload = function() {
 
     cvs3D = cvs3;
     generateLUVSpace(cvs3D);
+    plotHueSlice3D(meshGroup, hRange.value | 0, 300, 300, 250);
 };
 
 function map(v, rl, rh, dl, dh) {
@@ -297,7 +298,7 @@ function generateLUVSpace (cvs) {
     // camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
     camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1500 );
     // camera.position.x = 200;
-    camera.position.y = 500;
+    camera.position.y = 100;
     camera.position.z = 500;
 
     scene = new THREE.Scene();
@@ -308,12 +309,13 @@ function generateLUVSpace (cvs) {
     mesh = new THREE.Mesh( geometry, material );
     meshGroup.add(mesh);
 
-    plotHueSlice3D(meshGroup, 12, 300, 300, 250);
+    // Plot the edges
+    plotEdges(meshGroup, 300, 300, 250);
 
     meshGroup.position.x = 50;
-    meshGroup.position.y = -650;
-    meshGroup.position.z = -200;
-    meshGroup.rotation.x = -90;
+    meshGroup.position.y = -170;
+    // meshGroup.position.z = -200;
+    meshGroup.rotation.x = -Math.PI/2;
     scene.add( meshGroup );
 
     camera.lookAt(geometry.boundingSphere.center);
@@ -392,37 +394,88 @@ function render() {
     renderer.render( scene, camera );
 }
 
-function plotHueSlice3D(group, H, width, height, depth, changeExisting) {
+function plotHueSlice3D(group, H, width, height, depth) {
     var L, l, x, y, z, p, hr,
         rad = Math.min(width/2, height/2),
         PIover180 = Math.PI / 180,
-        cos = Math.cos, sin = Math.sin, material, mesh,
-        children = group.children;
+        cos = Math.cos, sin = Math.sin, mesh,
+        hslice, huePlane, cxn, lines;
+    
+    hslice = group.getObjectByName("hueSlice");
+    if (!hslice) {
+        hslice = new THREE.Object3D();
+        hslice.name = "hueSlice";
+        var material = new THREE.MeshBasicMaterial({ color: 0x000000, transparent:true, opacity:0.3 });
+        material.side = THREE.DoubleSide;
+        huePlane = new THREE.Mesh(new THREE.PlaneGeometry(rad, depth + 20), material);
+        huePlane.name = "plane";
+        huePlane.position.set(rad/2, 0, depth/2);
+        huePlane.rotation.x = Math.PI/2;
+        var linematerial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth:2, transparent:true, opacity:0.7 });
+        lines = new THREE.Geometry();
+        cxn = new THREE.Line(lines, linematerial);
+        cxn.name = "crossSection";
+        hslice.add(huePlane);
+        hslice.add(cxn);
+        hslice.position.set(0, 0, 0);
+        group.add(hslice);
+    } else {
+        cxn = hslice.getObjectByName("crossSection");
+        lines = cxn.geometry;
+    }
+    hslice.rotation.z = H * Math.PI / 180;
+
+    lines.vertices.length = 0;
 
     L = sampleHueSliceEdges(H);
     L = L[0].concat(L[1]);
 
-    material = new THREE.MeshBasicMaterial({ color: 0x000000 });
     for (l = 0; l < L.length; l++) {
         p = L[l];
         hr = p.z * PIover180;
-        x = (p.y * cos(hr) * rad) / 200;
-        y = (p.y * sin(hr) * rad) / 200;
+        x = (p.y * cos(0) * rad) / 200;
+        y = (p.y * sin(0) * rad) / 200;
         z = p.x * depth / 100;
-
-        if (changeExisting) {
-            mesh = children[l + 1];
-        } else {
-            mesh = new THREE.Mesh( new THREE.CubeGeometry(2, 2, 2), material );
-            group.add(mesh);
-        }
-        mesh.position.x = x;
-        mesh.position.y = y;
-        mesh.position.z = z;
+        lines.vertices.push(new THREE.Vector3(x, y, z));
     }
+    lines.verticesNeedUpdate = true;
+}
 
-    group.position.x = 50;
-    group.position.y = -650;
-    group.position.z = -200;
-    group.rotation.x = -90;
+function plotEdges(group, width, height, depth) {
+    var points, L, i, l, x, y, z, p, hr,
+        rad = Math.min(width/2, height/2),
+        PIover180 = Math.PI / 180,
+        cos = Math.cos, sin = Math.sin, material, edge, mesh,
+        children = group.children;
+
+    points = [];
+    points.push(sampleLCHEdge([0,0,0], [255,0,0]));
+    points.push(sampleLCHEdge([255,0,0], [255,0,255]));
+    points.push(sampleLCHEdge([255,0,255], [255,255,255]));
+    points.push(sampleLCHEdge([0,0,0], [0,255,0]));
+    points.push(sampleLCHEdge([0,255,0], [255,255,0]));
+    points.push(sampleLCHEdge([255,255,0], [255,255,255]));
+    points.push(sampleLCHEdge([0,0,0], [0,0,255]));
+    points.push(sampleLCHEdge([0,0,255], [0,255,255]));
+    points.push(sampleLCHEdge([0,255,255], [255,255,255]));
+    points.push(sampleLCHEdge([255,0,0], [255,255,0]));
+    points.push(sampleLCHEdge([0,255,0], [0,255,255]));
+    points.push(sampleLCHEdge([255,0,255], [0,0,255]));
+
+    material = new THREE.LineBasicMaterial({ color: 0x000000 });
+    for (i = 0; i < points.length; i++) {
+        edge = new THREE.Geometry();
+        L = points[i];
+        for (l = 0; l < L.length; l++) {
+            p = L[l];
+            hr = p.z * PIover180;
+            x = (p.y * cos(hr) * rad) / 200;
+            y = (p.y * sin(hr) * rad) / 200;
+            z = p.x * depth / 100;
+
+            edge.vertices.push(new THREE.Vector3(x, y, z));
+        }
+        mesh = new THREE.Line(edge, material);
+        group.add(mesh);
+    }
 }
