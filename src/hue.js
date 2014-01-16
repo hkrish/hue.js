@@ -57,7 +57,8 @@ var Hue = (function () {
      */
     function _RGBtoXYZ(rgb) {
         var s = 1, a = 0.0,
-            exp = Math.exp, log = Math.log;
+            exp = Math.exp, log = Math.log,
+			xyz = [0, 0, 0];
         for (var i = 0; i < 3; i++) {
             a = rgb[i] / 255;
             if (a < 0) {
@@ -69,17 +70,17 @@ var Hue = (function () {
             } else {
                 a = exp(2.4 * log((a + 0.055) / 1.055));
             }
-            rgb[i] = s * a;
+            xyz[i] = s * a;
         }
-        var r = rgb[0],
-            g = rgb[1],
-            b = rgb[2];
+        var r = xyz[0],
+            g = xyz[1],
+            b = xyz[2];
         
-        rgb[0] = r * mRGBtoXYZ[0] + g * mRGBtoXYZ[3] + b * mRGBtoXYZ[6];
-        rgb[1] = r * mRGBtoXYZ[1] + g * mRGBtoXYZ[4] + b * mRGBtoXYZ[7];
-        rgb[2] = r * mRGBtoXYZ[2] + g * mRGBtoXYZ[5] + b * mRGBtoXYZ[8];
+        xyz[0] = r * mRGBtoXYZ[0] + g * mRGBtoXYZ[3] + b * mRGBtoXYZ[6];
+        xyz[1] = r * mRGBtoXYZ[1] + g * mRGBtoXYZ[4] + b * mRGBtoXYZ[7];
+        xyz[2] = r * mRGBtoXYZ[2] + g * mRGBtoXYZ[5] + b * mRGBtoXYZ[8];
 
-        return rgb;
+        return xyz;
     }
 
     function _XYZtoRGB(xyz) {
@@ -88,13 +89,14 @@ var Hue = (function () {
             z = +xyz[2],
             p = 1/2.4,
             s = 1, a = 0.0,
-            exp = Math.exp, log = Math.log;
-        xyz[0] = x * mXYZtoRGB[0] + y * mXYZtoRGB[3] + z * mXYZtoRGB[6];
-        xyz[1] = x * mXYZtoRGB[1] + y * mXYZtoRGB[4] + z * mXYZtoRGB[7];
-        xyz[2] = x * mXYZtoRGB[2] + y * mXYZtoRGB[5] + z * mXYZtoRGB[8];
+            exp = Math.exp, log = Math.log,
+			rgb = [0, 0, 0];
+        rgb[0] = x * mXYZtoRGB[0] + y * mXYZtoRGB[3] + z * mXYZtoRGB[6];
+        rgb[1] = x * mXYZtoRGB[1] + y * mXYZtoRGB[4] + z * mXYZtoRGB[7];
+        rgb[2] = x * mXYZtoRGB[2] + y * mXYZtoRGB[5] + z * mXYZtoRGB[8];
 
         for (var i = 0; i < 3; i++) {
-            a = xyz[i];
+            a = rgb[i];
             if (a < 0) {
                 s = -1;
                 a = -a;
@@ -104,11 +106,40 @@ var Hue = (function () {
             } else {
                 a = 1.055 * exp(p * log(a)) - 0.055;
             }
-            xyz[i] = (s * a * 255 + 0.5) | 0;
+            rgb[i] = (s * a * 255 + 0.5) | 0;
         }
 
-        return xyz;
+        return rgb;
     }
+
+	function _sRGBtoXYZ(srgb) {
+		var r = srgb[0] / 255.0,
+            g = srgb[1] / 255.0,
+            b = srgb[2] / 255.0,
+			r1, g1, b1;
+        
+        r1 = r * mRGBtoXYZ[0] + g * mRGBtoXYZ[3] + b * mRGBtoXYZ[6];
+        g1 = r * mRGBtoXYZ[1] + g * mRGBtoXYZ[4] + b * mRGBtoXYZ[7];
+        b1 = r * mRGBtoXYZ[2] + g * mRGBtoXYZ[5] + b * mRGBtoXYZ[8];
+
+        return [r1, g1, b1];
+	}
+
+	function _XYZtoSRGB(xyz) {
+		var x = +xyz[0],
+            y = +xyz[1],
+            z = +xyz[2],
+			x1, y1, z1;
+
+        x1 = ((x * mXYZtoRGB[0] + y * mXYZtoRGB[3] + z * mXYZtoRGB[6])
+			  * 255 + 0.5) | 0;
+        y1 = ((x * mXYZtoRGB[1] + y * mXYZtoRGB[4] + z * mXYZtoRGB[7])
+			  * 255 + 0.5) | 0;
+        z1 = ((x * mXYZtoRGB[2] + y * mXYZtoRGB[5] + z * mXYZtoRGB[8])
+			  * 255 + 0.5) | 0;
+
+		return [x1, y1, z1];
+	}
 
     function _XYZtoLUV(xyz) {
         var x = +xyz[0],
@@ -119,13 +150,14 @@ var Hue = (function () {
             u = den > 0 ? 4.0 * x / den : 0.0,
             v = den > 0 ? 9.0 * y / den : 0.0,
             l = (y > kE) ? (116.0 * exp(1/3 * log(y)) - 16) :
-                    (y * kK);
+                    (y * kK),
+			luv = [0, 0, 0];
 
-        xyz[0] = +l;
-        xyz[1] = 13.0 * l * (u - Un);
-        xyz[2] = 13.0 * l * (v - Vn);
+        luv[0] = +l;
+        luv[1] = 13.0 * l * (u - Un);
+        luv[2] = 13.0 * l * (v - Vn);
 
-        return xyz;
+        return luv;
     }
 
     function _LUVtoXYZ(luv) {
@@ -137,53 +169,87 @@ var Hue = (function () {
             a = (((52 * l) / (u + 13 * l * Un)) - 1) / 3,
             b = -5 * y,
             c = y * (((39 * l) / (v + 13 * l * Vn)) - 5),
-            x = (c - b) / (a + 1/3);
+            x = (c - b) / (a + 1/3),
+			xyz = [0, 0, 0];
 
-        luv[0] = x;
-        luv[1] = y;
-        luv[2] = x * a + b;
+        xyz[0] = x;
+        xyz[1] = y;
+        xyz[2] = x * a + b;
 
-        return luv;
+        return xyz;
     }
 
     function _LUVtoLCH(luv) {
         var u = +luv[1],
             v = +luv[2],
             PIover180 = Math.PI / 180,
-            h = Math.atan2(v, u) / PIover180;
+            h = Math.atan2(v, u) / PIover180,
+			lch = [luv[0], 0, 0];
 
-        luv[1] = Math.sqrt(u * u + v * v);
-        luv[2] = (h < 0) ? h + 360 : h;
+        lch[1] = Math.sqrt(u * u + v * v);
+        lch[2] = (h < 0) ? h + 360 : h;
         
-        return luv;
+        return lch;
     }
 
     function _LCHtoLUV(lch) {
-        var c = lch[1],
-            PIover180 = Math.PI / 180,
-            h = lch[2] * PIover180;
+        var PIover180 = Math.PI / 180,
+			c = lch[1],
+            h = lch[2] * PIover180,
+			luv = [lch[0], 0, 0];
 
-        lch[1] = c * Math.cos(h);
-        lch[2] = c * Math.sin(h);
+        luv[1] = c * Math.cos(h);
+        luv[2] = c * Math.sin(h);
 
-        return lch;
+        return luv;
     }
+
+	function _XYZtoLAB(xyz) {
+		var xr = xyz[0] / RefWhiteX,
+			yr = xyz[1] / RefWhiteY,
+			zr = xyz[2] / RefWhiteZ,
+			exp = Math.exp, log = Math.log,
+			fx = xr > kE ? exp(1/3 * log(xr)) : (kK * xr + 16) / 116,
+			fy = xr > kE ? exp(1/3 * log(yr)) : (kK * yr + 16) / 116,
+			fz = xr > kE ? exp(1/3 * log(zr)) : (kK * zr + 16) / 116;
+		
+		return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+	}
+
+	function _LABtoXYZ(lab) {
+		var l = lab[0],
+			a = lab[1],
+			b = lab[2],
+			fy = (l + 16) / 116,
+			fx = 0.002 * a + fy,
+			fz = fy - 0.005 * b,
+			fx3 = fx * fx * fx,
+			fy3 = fy * fy * fy,
+			fz3 = fz * fz * fz,
+			xr = fx3 > kE ? fx3 : (116 * fx - 16) / kK,
+			yr = fy3 > 8 ? fy3 : l / kK,
+			zr = fz3 > kE ? fz3 : (116 * fz - 16) / kK;
+
+		return [xr * RefWhiteX, yr * RefWhiteY, zr * RefWhiteZ];
+	}
 
     /**
      * Convert a given Hue angle to the most saturated RGB color in that hue.
      * 
      * @param  {Number} hue The hue angle (in LUV or LCHuv) in degrees
-     *                      in the range 0 - 360.
+     * in the range 0 - 360.
      * @return {Array}      Most saturated color as an [R, G, B] array
      */
     function hueMSC (hue) {
-        // The formulae used here is referenced from Martijn Wijffelaars's 
-        // Master's theses
-        //  http://alexandria.tue.nl/extra2/afstversl/wsk-i/wijffelaars2008.pdf
-        //  
-        // I have changed the formula slightly to use the more complicated but
-        // accurate sRGB gamma correction, which is used consistently throughout
-        // the library.
+		/*
+         * The formulae used here is referenced from Martijn Wijffelaars's 
+         * Master's theses
+         *  http://alexandria.tue.nl/extra2/afstversl/wsk-i/wijffelaars2008.pdf
+         *  
+         * I have changed the formula slightly to use the more complicated but
+         * accurate sRGB gamma correction, which is used consistently throughout
+         * the library.
+		 */
         var msc = [0, 0, 0], variant, vi, min, max, i, edge,
             mrX, mrY, mrZ, mtX, mtY, mtZ, s = 1, cRp,
             PIover180 = Math.PI / 180,
@@ -242,7 +308,7 @@ var Hue = (function () {
         RefRGB: {
             get : function() { return _RefRGB; },
             enumerable: true
-        },
+        }
     });
 
 
