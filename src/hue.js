@@ -31,29 +31,29 @@ var Hue = (function () {
         // RGB <-> XYZ conversion matrices
         // See http://www.brucelindbloom.com/Eqn_RGB_XYZ_Matrix.html for
         // original formulae
-        mRGBtoXYZ = [   0.4124564390896922, 0.21267285140562253, 0.0193338955823293,
-                        0.357576077643909, 0.715152155287818, 0.11919202588130297,
-                        0.18043748326639894, 0.07217499330655958, 0.9503040785363679 ],
-        mXYZtoRGB = [   3.2404541621141045, -0.9692660305051868, 0.055643430959114726,
-                        -1.5371385127977166, 1.8760108454466942, -0.2040259135167538,
-                        -0.498531409556016, 0.041556017530349834, 1.0572251882231791 ],
+        mRGBtoXYZ = [0.4124564390896922, 0.21267285140562253, 0.0193338955823293,
+					 0.357576077643909, 0.715152155287818, 0.11919202588130297,
+                     0.18043748326639894, 0.07217499330655958, 0.9503040785363679 ],
+        mXYZtoRGB = [3.2404541621141045, -0.9692660305051868, 0.055643430959114726,
+					 -1.5371385127977166, 1.8760108454466942, -0.2040259135167538,
+                     -0.498531409556016, 0.041556017530349834, 1.0572251882231791 ],
         // Hue corresponding to colours at the corners of an RGB cube, and the
         // min and max RGB components throughout that edge (0-Red, 1-Green, 2-Blue).
         // These values correspond to sRGB and D65 white point
         rgbPrimariesH = [   
-                12.1740,        // H in LCHuv for Red
-                85.8727,        // Yellow
-                127.7236,       // Green
-                192.1740,       // Cyan
-                265.8727,       // Blue
-                307.7236 ],     // Magenta
+            12.1740,        // H in LCHuv for Red
+            85.8727,        // Yellow
+            127.7236,       // Green
+            192.1740,       // Cyan
+            265.8727,       // Blue
+            307.7236 ],     // Magenta
         rgbEdges = [
-                [rgbPrimariesH[0], rgbPrimariesH[1], 1, 2, 0],
-                [rgbPrimariesH[1], rgbPrimariesH[2], 0, 2, 1],
-                [rgbPrimariesH[2], rgbPrimariesH[3], 2, 0, 1],
-                [rgbPrimariesH[3], rgbPrimariesH[4], 1, 0, 2],
-                [rgbPrimariesH[4], rgbPrimariesH[5], 0, 1, 2],
-                [rgbPrimariesH[5], rgbPrimariesH[0], 2, 1, 0] ];
+            [rgbPrimariesH[0], rgbPrimariesH[1], 1, 2, 0],
+            [rgbPrimariesH[1], rgbPrimariesH[2], 0, 2, 1],
+            [rgbPrimariesH[2], rgbPrimariesH[3], 2, 0, 1],
+            [rgbPrimariesH[3], rgbPrimariesH[4], 1, 0, 2],
+            [rgbPrimariesH[4], rgbPrimariesH[5], 0, 1, 2],
+            [rgbPrimariesH[5], rgbPrimariesH[0], 2, 1, 0] ];
 
     /**
      * Low level utility functions for direct conversions
@@ -373,7 +373,7 @@ var Hue = (function () {
 			cBarPrime7 = cBarPrime * cBarPrime * cBarPrime *
 				cBarPrime * cBarPrime * cBarPrime * cBarPrime,
 			rC = sqrt(cBarPrime7 / (cBarPrime + 6103515625.0)),
-			rT = -2 * rC sin(2 * dTheta * piOver180);
+			rT = -2 * rC * sin(2 * dTheta * piOver180);
 
 		return sqrt((dLPrime / (kL * sL)) * (dLPrime / (kL * sL)) + 
 					(dCPrime / (kC * sC)) * (dCPrime / (kC * sC)) + 
@@ -421,6 +421,7 @@ var Hue = (function () {
     };
     // Utility functions
     Hue.hueMSC = hueMSC;
+	Hue.CIEDE2000 = CIEDE2000;
 
     return Hue;
 }());
