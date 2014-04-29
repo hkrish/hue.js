@@ -2,7 +2,8 @@
 /**
  * hue
  *
- * A singleton object
+ * hue.js assumes CIE D65 reference white point and sRGB colorspace for all operations.
+ * NOTE: Add more details here.
  *
  * @namespace
  */
@@ -14,11 +15,8 @@ var Hue = (function () {
 	 * formulas, constants and general information regarding color type
 	 * conversions are from http://www.brucelindbloom.com/Math.html
 	 */
-	// All following calculations assume these references
-	var _RefWhite = "D65",
-		_RefRGB	= "sRGB",
-		// Constants
-		RefWhiteX = 0.95047,
+	// Constants
+	var RefWhiteX = 0.95047,
 		RefWhiteY = 1.0,
 		RefWhiteZ = 1.08883,
 		// Un and Vn and the u, v coordinates of the reference white
@@ -395,7 +393,7 @@ var Hue = (function () {
 	}
 
 
-	var hue = {
+	return {
 		/*
 		 * Conversion methods
 		 */
@@ -436,21 +434,4 @@ var Hue = (function () {
 		 */
 		CIEDE2000: CIEDE2000
 	};
-
-	/*
-	 * Define readonly properties
-	 */
-	Object.defineProperties( hue, {
-		RefWhite: {
-			get : function() { return _RefWhite; },
-			enumerable: true
-		},
-
-		RefRGB: {
-			get : function() { return _RefRGB; },
-			enumerable: true
-		}
-	});
-
-	return hue;
 }());
