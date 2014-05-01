@@ -1,4 +1,4 @@
-/*global window:false, document:false, THREE:false, Hue:false, console:false */
+/*global window:false, document:false, THREE:false, hue:false, console:false */
 "use strict";
 
 var cvs3D;
@@ -47,7 +47,7 @@ function refreshPlot(cxt, iData, H) {
         scan = l * scanWid;
         for (c = 0 ; c < width; c++) {
             C = c * 200 / width;
-            rgb = Hue.LCHtoRGB([L, C, H]);
+            rgb = hue.LCHtoRGB([L, C, H]);
             idx = scan + c * 4;
             if (Math.min(rgb[0], rgb[1], rgb[2]) >= 0 &&
                         Math.max(rgb[0], rgb[1], rgb[2]) <= 255) {
@@ -75,7 +75,7 @@ function refreshPlot(cxt, iData, H) {
     cxt.fill();
 
     // Highlight max Chroma
-    var mscLCH = Hue.RGBtoLCH(Hue.hueMSC(H));
+    var mscLCH = hue.RGBtoLCH(hue.hueMSC(H));
     cxt.beginPath();
     cxt.fillStyle = "#000";
     maxL = (100 - mscLCH[0]) * height / 100;
@@ -95,7 +95,7 @@ function plotHC(cxt, iData, L) {
         for (h = 0 ; h < width; h++) {
             H = h * 360 / width;
             idx = scan + h * 4;
-            rgb = Hue.LCHtoRGB([L, C, H]);
+            rgb = hue.LCHtoRGB([L, C, H]);
             if (Math.min(rgb[0], rgb[1], rgb[2]) >= 0 &&
                         Math.max(rgb[0], rgb[1], rgb[2]) <= 255) {
                 data[idx + 0] = rgb[0];
@@ -116,7 +116,7 @@ function plotHC_polar(cxt, iData, L) {
         x1 = x2 - x1;
         y1 = y2 - y1;
         var a = Math.atan2(y1, x1) * 180 / Math.PI;
-        return [ 
+        return [
                 Math.sqrt(x1 * x1 + y1 * y1),
                 (a + 360) % 360
             ];
@@ -134,7 +134,7 @@ function plotHC_polar(cxt, iData, L) {
             da = distAngle(xc, yc, h, c);
             c = da[0];
             h = da[1];
-            rgb = Hue.LCHtoRGB([L, c, h]);
+            rgb = hue.LCHtoRGB([L, c, h]);
             if (L && Math.min(rgb[0], rgb[1], rgb[2]) >= 0 &&
                         Math.max(rgb[0], rgb[1], rgb[2]) <= 255) {
                 data[idx + 0] = rgb[0];
@@ -173,7 +173,7 @@ function geometryLCH(width, height, depth) {
             hr = h * PIover180;
             maxC = 0;
             for (c = 0 ; c < 200; c += 0.5) {
-                rgb = Hue.LCHtoRGB([l, c, h]);
+                rgb = hue.LCHtoRGB([l, c, h]);
                 if (min(rgb[0], rgb[1], rgb[2]) >= 0 &&
                             max(rgb[0], rgb[1], rgb[2]) <= 255) {
                     maxC = c;
@@ -256,7 +256,7 @@ function geometryLCH(width, height, depth) {
         p.vertexColors[2] = colors[v4];
         faces.push(p);
     }
-    
+
     geom.computeCentroids();
     geom.computeFaceNormals();
     geom.computeBoundingSphere();
@@ -400,7 +400,7 @@ function plotHueSlice3D(group, H, width, height, depth) {
         PIover180 = Math.PI / 180,
         cos = Math.cos, sin = Math.sin, mesh,
         hslice, huePlane, cxn, lines;
-    
+
     hslice = group.getObjectByName("hueSlice");
     if (!hslice) {
         hslice = new THREE.Object3D();
@@ -432,9 +432,9 @@ function plotHueSlice3D(group, H, width, height, depth) {
 
     for (l = 0; l < L.length; l++) {
         p = L[l];
-        hr = p.z * PIover180;
-        x = (p.y * cos(0) * rad) / 200;
-        y = (p.y * sin(0) * rad) / 200;
+        hr = p.z * PIover180 - hslice.rotation.z;
+        x = (p.y * cos(hr) * rad) / 200;
+        y = (p.y * sin(hr) * rad) / 200;
         z = p.x * depth / 100;
         lines.vertices.push(new THREE.Vector3(x, y, z));
     }
@@ -442,6 +442,86 @@ function plotHueSlice3D(group, H, width, height, depth) {
 }
 
 function plotEdges(group, width, height, depth) {
+    var points, L, i, l, x, y, z, p, hr,
+        rad = Math.min(width/2, height/2),
+        PIover180 = Math.PI / 180,
+        cos = Math.cos, sin = Math.sin, material, edge, mesh,
+        children = group.children;
+
+    points = [];
+    points.push(sampleLCHEdge([0,0,0], [255,0,0], 4, rad, depth));
+    points.push(sampleLCHEdge([255,0,0], [255,0,255], 4, rad, depth));
+    points.push(sampleLCHEdge([255,0,255], [255,255,255], 4, rad, depth));
+    points.push(sampleLCHEdge([0,0,0], [0,255,0], 4, rad, depth));
+    points.push(sampleLCHEdge([0,255,0], [255,255,0], 4, rad, depth));
+    points.push(sampleLCHEdge([255,255,0], [255,255,255], 4, rad, depth));
+    points.push(sampleLCHEdge([0,0,0], [0,0,255], 4, rad, depth));
+    points.push(sampleLCHEdge([0,0,255], [0,255,255], 4, rad, depth));
+    points.push(sampleLCHEdge([0,255,255], [255,255,255], 4, rad, depth));
+    points.push(sampleLCHEdge([255,0,0], [255,255,0], 4, rad, depth));
+    points.push(sampleLCHEdge([0,255,0], [0,255,255], 4, rad, depth));
+    points.push(sampleLCHEdge([255,0,255], [0,0,255], 4, rad, depth));
+
+    material = new THREE.LineBasicMaterial({ color: 0x000000,  linewidth:2 });
+    for (i = 0; i < points.length; i++) {
+        edge = new THREE.Geometry();
+        L = points[i];
+        for (l = 0; l < L.length; l++) {
+            p = L[l];
+//            hr = p.z * PIover180;
+//            x = (p.y * cos(hr) * rad) / 200;
+//            y = (p.y * sin(hr) * rad) / 200;
+//            z = p.x * depth / 100;
+
+			x = p.x;
+			y = p.y;
+			z = p.z;
+
+            edge.vertices.push(new THREE.Vector3(x, y, z));
+        }
+        mesh = new THREE.Line(edge, material);
+        group.add(mesh);
+    }
+
+	// Highlight points
+	// u
+	var ry = sampleLCHEdge([255,0,0], [255,255, 0], 4, rad, depth);
+	var mw = sampleLCHEdge([255, 0,255], [255,255,255], 4, rad, depth);
+	// v
+	var rm = sampleLCHEdge([255,0,0], [255, 0,255], 4, rad, depth);
+	var yw = sampleLCHEdge([255,255,0], [255,255,255], 4, rad, depth);
+
+	for (i = 0; i < 4; ++i) {
+		markPoint(group, ry[i]);
+		markPoint(group, mw[i]);
+		markPoint(group, rm[i]);
+		markPoint(group, yw[i]);
+	}
+
+	function coonsBiLinear(x0v, x1v, xu0, xu1, u, v) {
+		var x00 = x0v[0],
+			x01 = x0v[3],
+			x10 = x1v[0],
+			x11 = x1v[3],
+			u1 = 1 - u,
+			v1 = 1 - v,
+			nu = Math.floor(u * 3),
+			nv = Math.floor(v * 3),
+			x010 = x00.mult(u1).add(x10.mult(u)),
+			x011 = x01.mult(u1).add(x11.mult(u)),
+			xuv = x0v[nv].mult(u1).add(x1v[nv].mult(u)).add(
+						xu0[nu].mult(v1).add(xu1[nu].mult(v))).sub(
+							x010.mult(v1).add(x011.mult(v)));
+		return xuv;
+	};
+
+	markPoint(group, coonsBiLinear(ry, mw, rm, yw, 1/3, 1/3), 4);
+	markPoint(group, coonsBiLinear(ry, mw, rm, yw, 2/3, 1/3), 4);
+	markPoint(group, coonsBiLinear(ry, mw, rm, yw, 1/3, 2/3), 5);
+	markPoint(group, coonsBiLinear(ry, mw, rm, yw, 2/3, 2/3), 5);
+}
+
+function plotEdges_lines(group, width, height, depth) {
     var points, L, i, l, x, y, z, p, hr,
         rad = Math.min(width/2, height/2),
         PIover180 = Math.PI / 180,
@@ -478,4 +558,18 @@ function plotEdges(group, width, height, depth) {
         mesh = new THREE.Line(edge, material);
         group.add(mesh);
     }
+}
+
+
+function markPoint(group, p, r) {
+	if (!p || !group)
+		return;
+	r = r || 3;
+	var material = new THREE.MeshBasicMaterial({ color: 0x000000 }),
+		geom = new THREE.SphereGeometry(r),
+		mesh = new THREE.Mesh(geom, material);
+	mesh.translateX(p.x);
+	mesh.translateY(p.y);
+	mesh.translateZ(p.z);
+	group.add(mesh);
 }
