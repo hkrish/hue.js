@@ -2,7 +2,7 @@
 window.onload = function() {
 	var cvs3d = document.getElementById("cvs");
 
-	var viz1 = new hue.Viz(cvs3d, 2, 2, 2.4);
+	var viz1 = new hue.Viz(cvs3d, 1, 1, 2);
 
 //	cv.map(function(cvi){
 //			markPoint(viz1.meshGroup, cvi, 2);
@@ -10,6 +10,8 @@ window.onload = function() {
 ////			markPoint(viz1.meshGroup, cvij, 2);
 ////		});
 //	});
+
+	var geom = viz1.meshGroup.getObjectByName("LCH-space").children[0];
 
 	window.v= viz1;
 };
