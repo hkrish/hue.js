@@ -299,9 +299,9 @@ hue.Viz = function(node, scaleX, scaleY, scaleZ) {
 	scaleX = scaleX || 1;
 	scaleY = scaleY || 1;
 	scaleZ = scaleZ || 1;
-	
+
 	var that = this;
-	
+
 	this.width = node.width,
 	this.height = node.height,
 	this.windowHalfX = this.width / 2,
@@ -379,7 +379,7 @@ hue.Viz.makeLCHMesh = function(scaleX, scaleY, scaleZ) {
 
 	var rgbPatches = [],
 		group = new THREE.Object3D(),
-		rgbPatch, cPatch, getSurfacePoint, geometry,  mesh;
+		rgbPatch, cPatch, getSurfacePoint, geometry, geom,  mesh;
 
 	// Basic material with vertex colors
 	var material = new THREE.MeshBasicMaterial({
@@ -434,16 +434,18 @@ hue.Viz.makeLCHMesh = function(scaleX, scaleY, scaleZ) {
 	// Red-Yellow-White-Magenta patch
 	rgbPatches.push([eRY, eMw, eRM, eYw]);
 	// Green-Cyan-White-Yellow patch
-	rgbPatches.push([eGC, eYw, eCw, eGY]);
+	rgbPatches.push([eGC, eYw, eGY, eCw]);
 	// Blue-Magenta-White-Cyan patch
 	rgbPatches.push([eBM, eCw, eBC, eMw]);
 	// Red-Magenta-Blue-Black patch
-	rgbPatches.push([eRM, ebB, eMB, eRb]);
+	rgbPatches.push([eRM, ebB,  eRb, eMB]);
 	// Blue-Cyan-Green-Black patch
 	rgbPatches.push([eBC,ebG, eBb, eCG]);
 	// Red-Black-Green-Yellow
-	rgbPatches.push([eRb, eYG, ebG, eRY]);
+	rgbPatches.push([eRb, eYG, eRY, ebG]);
 
+	// Generate patches and merge them
+	geometry = new THREE.Geometry();
 	for (var i = 0; i< rgbPatches.length; ++i) {
 		// Sample edges of colour patches and fit bezier curves through them.
 		rgbPatch = rgbPatches[i];
@@ -460,32 +462,37 @@ hue.Viz.makeLCHMesh = function(scaleX, scaleY, scaleZ) {
 			return cPatch.getPoint(u, v);
 		};
 
-		geometry = new THREE.ParametricGeometry(getSurfacePoint, 10, 10);
+		geom = new THREE.ParametricGeometry(getSurfacePoint, 10, 10);
 
 		// Update vertex colors
 		var colors = cPatch.vertexColors;
-		var faces = geometry.faces;
+		var faces = geom.faces;
 		for (var j = faces.length-1; j >= 0; --j) {
 			var face = faces[j];
 			face.vertexColors[0] = colors[face.a];
 			face.vertexColors[1] = colors[face.b];
 			face.vertexColors[2] = colors[face.c];
 		}
-		
-		geometry.computeFaceNormals();
-		geometry.computeBoundingSphere();
 
-		// Create and add the mesh to a group
-		mesh = new THREE.Mesh( geometry, material );
-		group.add(mesh);
+		geom.computeFaceNormals();
+		geom.computeBoundingSphere();
 
-		// Add a wireframe helper
-		var helper = new THREE.WireframeHelper(mesh);
-//		helper.material.depthTest = false;
-		helper.material.opacity = 0.25;
-		helper.material.transparent = true;
-		group.add(helper);
+		geometry.merge(geom);
 	}
+
+	// Merge duplicate vertices around the seems
+	geometry.mergeVertices();
+
+	// Create and add the mesh to a group
+	mesh = new THREE.Mesh( geometry, material );
+	group.add(mesh);
+
+	// Add a wireframe helper
+	var helper = new THREE.WireframeHelper(mesh);
+	//		helper.material.depthTest = false;
+	helper.material.opacity = 0.25;
+	helper.material.transparent = true;
+	group.add(helper);
+
 	return group;
 };
-
