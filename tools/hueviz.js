@@ -199,7 +199,7 @@ hue.Viz.makeLCHMesh = function(scaleX, scaleY, scaleZ) {
 			return cPatch.getPoint(u, v);
 		};
 
-		geom = new THREE.ParametricGeometry(getSurfacePoint, 10, 10);
+		geom = new THREE.ParametricGeometry(getSurfacePoint, 20, 20);
 
 		// Update vertex colors
 		var colors = cPatch.vertexColors;
